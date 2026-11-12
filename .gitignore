@@ -1,4 +1,5 @@
 .venv/
+venv/
 __pycache__/
 *.pyc
 *.pkl
@@ -7,4 +8,10 @@ __pycache__/
 dist/
 build/
 .env
+.env.*
 .pytest_cache/
+.coverage
+htmlcov/
+*.log
+.idea/
+.vscode/

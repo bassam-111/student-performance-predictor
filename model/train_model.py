@@ -1,3 +1,12 @@
+"""Train and evaluate pass/fail classifiers on dataset/students.csv.
+
+Evaluation notes (read before quoting any number):
+- The bundled dataset has only 20 rows, so the 80/20 holdout test set is
+  just 4 rows and a 1.0 holdout accuracy on it means very little.
+- Model selection therefore uses 5-fold stratified cross-validation over
+  the full dataset, which is the honest headline number. The holdout
+  accuracy is still reported for completeness.
+"""
 import json
 import os
 import pickle
@@ -9,7 +18,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import StratifiedKFold, cross_val_score, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.tree import DecisionTreeClassifier
@@ -40,6 +49,16 @@ def evaluate_model(name, model, X_test, y_test):
         "accuracy": accuracy,
         "classification_report": report,
         "confusion_matrix": matrix,
+    }
+
+
+def cross_validate_model(pipeline, X, y, cv):
+    """5-fold stratified CV accuracy; the honest headline metric here."""
+    scores = cross_val_score(pipeline, X, y, cv=cv, scoring="accuracy")
+    return {
+        "cv_accuracy_mean": round(float(scores.mean()), 4),
+        "cv_accuracy_std": round(float(scores.std()), 4),
+        "cv_scores": [round(float(s), 4) for s in scores],
     }
 
 
@@ -76,6 +95,7 @@ def main():
     )
 
     preprocessor = build_preprocessor(categorical_features)
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
     models = {
         "Logistic Regression": LogisticRegression(max_iter=500),
@@ -95,21 +115,43 @@ def main():
         )
         pipeline.fit(X_train, y_train)
         trained_models[name] = pipeline
-        evaluations.append(evaluate_model(name, pipeline, X_test, y_test))
+        evaluation = evaluate_model(name, pipeline, X_test, y_test)
+        # Cross-validation on the full dataset: the reliable comparison.
+        evaluation.update(cross_validate_model(pipeline, X, y, cv))
+        evaluations.append(evaluation)
 
-    best_eval = max(evaluations, key=lambda item: item["accuracy"])
+    # Best model by CV accuracy; holdout accuracy breaks ties.
+    best_eval = max(
+        evaluations,
+        key=lambda item: (item["cv_accuracy_mean"], item["accuracy"]),
+    )
     best_model = trained_models[best_eval["model"]]
 
     with open(MODEL_PATH, "wb") as file:
         pickle.dump(best_model, file)
 
     with open(METRICS_PATH, "w", encoding="utf-8") as file:
-        json.dump({"best_model": best_eval, "all_models": evaluations}, file, indent=2)
+        json.dump(
+            {
+                "dataset_rows": len(df),
+                "holdout_test_rows": len(y_test),
+                "best_model": best_eval,
+                "all_models": evaluations,
+            },
+            file,
+            indent=2,
+        )
 
     save_confusion_matrix(best_eval["confusion_matrix"], best_eval["model"])
 
-    print("Training complete. Best model:", best_eval["model"])
-    print("Accuracy:", f"{best_eval['accuracy']:.2%}")
+    print(f"Dataset: {len(df)} rows ({int(y.sum())} pass, {int((1 - y).sum())} fail)")
+    print("Training complete. Best model (by 5-fold CV):", best_eval["model"])
+    print(
+        "CV accuracy:",
+        f"{best_eval['cv_accuracy_mean']:.2%} "
+        f"(+/- {best_eval['cv_accuracy_std']:.2%})",
+    )
+    print("Holdout accuracy (4-row test set):", f"{best_eval['accuracy']:.2%}")
     print("Confusion Matrix:")
     print(best_eval["confusion_matrix"])
 

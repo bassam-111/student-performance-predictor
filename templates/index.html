@@ -66,6 +66,13 @@
         <button type="submit" class="btn">Predict</button>
       </form>
 
+      {% if error_text %}
+      <div class="result fail">
+        <span>Error</span>
+        <strong>{{ error_text }}</strong>
+      </div>
+      {% endif %}
+
       {% if prediction_text %}
       <div class="result {{ 'pass' if 'PASS' in prediction_text else 'fail' }}">
         <span>Prediction</span>

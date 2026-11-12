@@ -1,6 +1,8 @@
 {
+  "dataset_rows": 20,
+  "holdout_test_rows": 4,
   "best_model": {
-    "model": "Logistic Regression",
+    "model": "Decision Tree",
     "accuracy": 1.0,
     "classification_report": {
       "0": {
@@ -38,6 +40,15 @@
         0,
         2
       ]
+    ],
+    "cv_accuracy_mean": 1.0,
+    "cv_accuracy_std": 0.0,
+    "cv_scores": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
     ]
   },
   "all_models": [
@@ -80,6 +91,15 @@
           0,
           2
         ]
+      ],
+      "cv_accuracy_mean": 0.95,
+      "cv_accuracy_std": 0.1,
+      "cv_scores": [
+        1.0,
+        1.0,
+        1.0,
+        0.75,
+        1.0
       ]
     },
     {
@@ -121,6 +141,15 @@
           0,
           2
         ]
+      ],
+      "cv_accuracy_mean": 0.95,
+      "cv_accuracy_std": 0.1,
+      "cv_scores": [
+        1.0,
+        1.0,
+        1.0,
+        0.75,
+        1.0
       ]
     },
     {
@@ -162,6 +191,15 @@
           0,
           2
         ]
+      ],
+      "cv_accuracy_mean": 1.0,
+      "cv_accuracy_std": 0.0,
+      "cv_scores": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
       ]
     }
   ]
